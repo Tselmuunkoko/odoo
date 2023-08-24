@@ -126,6 +126,7 @@
                 <field name="amount_tax" sum="Tax Total" widget="monetary" optional="hide"/>
                 <field name="amount_total" sum="Total Tax Included" widget="monetary" decoration-bf="1" optional="show"/>
                 <field name="currency_id" invisible="1"/>
+                <field name="profit" />
                 <field name="invoice_status"
                     decoration-success="invoice_status == 'invoiced'"
                     decoration-info="invoice_status == 'to invoice'"

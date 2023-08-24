@@ -92,7 +92,11 @@ class SaleOrderLine(models.Model):
         # without modifying the related product_id when updated.
         domain=[('sale_ok', '=', True)])
     product_uom_category_id = fields.Many2one(related='product_id.uom_id.category_id', depends=['product_id'])
-
+    product_standard_price = fields.Monetary(
+        string="product cost",
+        compute='_compute_product_standard_price',
+        store=True
+        )
     product_custom_attribute_value_ids = fields.One2many(
         comodel_name='product.attribute.custom.value', inverse_name='sale_order_line_id',
         string="Custom Values",
@@ -265,7 +269,10 @@ class SaleOrderLine(models.Model):
         compute='_compute_product_uom_readonly')
 
     #=== COMPUTE METHODS ===#
-
+    @api.depends('product_template_id')
+    def _compute_product_standard_price(self):
+        for line in self:
+            line.product_standard_price = line.product_template_id.standard_price
     @api.depends('product_id')
     def _compute_product_template_id(self):
         for line in self:

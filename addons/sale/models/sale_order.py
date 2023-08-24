@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+import logging
 
 from datetime import timedelta
 from itertools import groupby
@@ -13,6 +14,8 @@ from odoo.tools import float_is_zero, format_amount, format_date, html_keep_url,
 from odoo.tools.sql import create_index
 
 from odoo.addons.payment import utils as payment_utils
+
+_logger = logging.getLogger(__name__)
 
 READONLY_FIELD_STATES = {
     state: [('readonly', True)]
@@ -59,6 +62,12 @@ class SaleOrder(models.Model):
         index='trigram',
         states={'draft': [('readonly', False)]},
         default=lambda self: _('New'))
+
+    profit = fields.Monetary(
+        string='Profit',
+        compute='_compute_profit',
+        store=True)
+    standard_price = fields.Float(string='Standard Costs', compute='_compute_standard_price',store=True)
 
     company_id = fields.Many2one(
         comodel_name='res.company',
@@ -610,7 +619,18 @@ class SaleOrder(models.Model):
         super()._compute_access_url()
         for order in self:
             order.access_url = f'/my/orders/{order.id}'
+    @api.depends('amount_total', 'standard_price')
+    def _compute_profit(self):
+        for order in self:
+            order.profit = order.amount_total - order.standard_price
 
+    @api.depends("order_line")
+    def _compute_standard_price(self):
+        for record in self:
+            standard_price = 0.0
+            for product in record.order_line:
+                standard_price += product.product_standard_price
+            record.standard_price = standard_price
     #=== CONSTRAINT METHODS ===#
 
     @api.constrains('company_id', 'order_line')
